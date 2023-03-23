@@ -1,0 +1,45 @@
+### PROMPTS
+
+GET http://localhost:3000/api/prompts HTTP/1.1
+
+###
+
+POST http://localhost:3000/api/prompts HTTP/1.1
+content-type: application/json
+
+{
+    "prompt": "Crack a joke about working with Typescript."
+}
+
+###
+
+DELETE http://localhost:3000/api/prompts HTTP/1.1
+
+{
+    "id": "641b1259bfa62a489665d52c"
+}
+
+### REMINDERS
+
+GET http://localhost:3000/api/reminders HTTP/1.1
+
+###
+
+POST http://localhost:3000/api/reminders HTTP/1.1
+content-type: application/json
+
+{
+    "reminder": "When in doubt, Coffee."
+}
+
+###
+
+DELETE http://localhost:3000/api/reminders HTTP/1.1
+
+{
+    "id": "641b12c4bfa62a489665d52f"
+}
+
+### TRIGGER
+
+POST http://localhost:3000/api/trigger HTTP/1.1
