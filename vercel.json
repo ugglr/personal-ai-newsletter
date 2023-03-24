@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron",
+      "schedule": "0 10 * * *",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "authorization": "API_TOKEN"
+      }
+    }
+  ]
+}
