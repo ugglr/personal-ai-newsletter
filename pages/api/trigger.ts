@@ -4,10 +4,16 @@ import { PromptDto } from "./prompts";
 import { openai } from "../../lib/openai";
 import { sendEmail } from "@/lib/novu";
 
-const loadData = async (path: "reminders" | "prompts"): Promise<unknown[]> => {
+export const loadData = async (
+  path: "reminders" | "prompts"
+): Promise<unknown[]> => {
   try {
-    const response = await fetch(`http://localhost:3000/api/${path}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/${path}`, {
       method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: process.env.NEXT_PUBLIC_API_KEY as string,
+      },
     });
 
     const result = await response.json();
@@ -27,7 +33,11 @@ type PostData = {
   success: boolean;
 };
 const handler = async (req: NextApiRequest, res: NextApiResponse<PostData>) => {
-  const { method } = req;
+  const { method, headers } = req;
+
+  if (headers.authorization !== process.env.NEXT_PUBLIC_API_KEY) {
+    res.status(401).json({ success: false });
+  }
 
   switch (method) {
     case "POST":

@@ -18,14 +18,18 @@ const handler = async (
   req: NextApiRequest,
   res: NextApiResponse<PostData | GetData>
 ) => {
-  const { method } = req;
+  const { method, body, headers } = req;
+
+  if (headers.authorization !== process.env.NEXT_PUBLIC_API_KEY) {
+    res.status(401).json({ success: false });
+  }
 
   await dbConnect();
 
   switch (method) {
     case "DELETE":
       try {
-        const { id } = JSON.parse(req.body);
+        const { id } = body;
 
         const deletedPrompt = await Prompt.deleteOne({ _id: id });
 
@@ -48,7 +52,7 @@ const handler = async (
       break;
     case "POST":
       try {
-        const prompt = await Prompt.create(req.body);
+        const prompt = await Prompt.create(body);
         res.status(200).json({ success: true, data: prompt });
       } catch (error) {
         res.status(400).json({ success: false });

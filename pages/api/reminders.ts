@@ -3,6 +3,7 @@ import dbConnect from "../../lib/dbConnect";
 import Reminder from "../../models/Reminder";
 
 export type ReminderDto = {
+  _id: string;
   reminder: string;
 };
 type PostData = {
@@ -17,21 +18,20 @@ const handler = async (
   req: NextApiRequest,
   res: NextApiResponse<PostData | GetData>
 ) => {
-  const { method } = req;
+  const { method, body, headers } = req;
+
+  if (headers.authorization !== process.env.NEXT_PUBLIC_API_KEY) {
+    res.status(401).json({ success: false });
+  }
 
   await dbConnect();
 
   switch (method) {
     case "DELETE":
       try {
-        const { id } = JSON.parse(req.body);
+        await Reminder.deleteOne({ _id: body.id });
 
-        const deletedReminder = await Reminder.deleteOne({ _id: id });
-
-        if (!deletedReminder.acknowledged) {
-          res.status(200).json({ success: true });
-        }
-        res.status(400).json({ success: false });
+        res.status(200).json({ success: true });
       } catch (error) {
         res.status(400).json({ success: false });
       }
@@ -46,7 +46,7 @@ const handler = async (
       break;
     case "POST":
       try {
-        const reminder = await Reminder.create(req.body);
+        const reminder = await Reminder.create(body);
         res.status(201).json({ success: true, data: reminder });
       } catch (error) {
         res.status(400).json({ success: false });

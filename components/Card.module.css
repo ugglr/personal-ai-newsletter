@@ -1,0 +1,11 @@
+.card {
+    display: flex;
+    justify-content: space-between;
+    max-width: 30vw;
+    gap: 3rem;
+    margin-bottom: 1rem;
+}
+.redButton {
+    background-color: red;
+    color: white;
+}

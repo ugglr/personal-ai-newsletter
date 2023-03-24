@@ -1,11 +1,45 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
+import Head from "next/head";
+import styles from "@/styles/Home.module.css";
+import { loadData } from "./api/trigger";
+import { ReminderDto } from "./api/reminders";
+import { PromptDto } from "./api/prompts";
+import { NextPage } from "next";
+import Card from "@/components/Card";
+import { useState } from "react";
+import Form from "@/components/Form";
 
-const inter = Inter({ subsets: ['latin'] })
+type Props = {
+  reminders: ReminderDto[];
+  prompts: PromptDto[];
+};
+const Home: NextPage<Props> = (props) => {
+  const [reminders, setReminders] = useState<ReminderDto[]>(props.reminders);
+  const [prompts, setPrompts] = useState<PromptDto[]>(props.prompts);
 
-export default function Home() {
+  const refetchData = async (): Promise<void> => {
+    const updatedReminders = (await loadData("reminders")) as ReminderDto[];
+    setReminders(updatedReminders);
+    const updatedPrompts = (await loadData("prompts")) as PromptDto[];
+    setPrompts(updatedPrompts);
+  };
+
+  const onDelete = async (type: "reminders" | "prompts", id: string) => {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_URL}/api/${type}/api/${type}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: process.env.NEXT_PUBLIC_API_KEY as string,
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      await refetchData();
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <>
       <Head>
@@ -15,109 +49,46 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
+        <h1 className={styles.title}>Your newsletter</h1>
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
+        <Form onDone={refetchData} />
+
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Reminders</h3>
+          {reminders.map(({ reminder, _id }) => (
+            <Card
+              key={_id}
+              value={reminder}
+              onDelete={async () => await onDelete("reminders", _id)}
             />
-          </div>
-        </div>
+          ))}
+        </section>
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Prompts</h3>
+          {prompts.map(({ prompt, _id }) => (
+            <Card
+              key={_id}
+              value={prompt}
+              onDelete={async () => await onDelete("prompts", _id)}
+            />
+          ))}
+        </section>
       </main>
     </>
-  )
-}
+  );
+};
+
+export default Home;
+
+export const getServerSideProps = async () => {
+  const reminders = await loadData("reminders");
+  const prompts = await loadData("prompts");
+
+  return {
+    props: {
+      reminders,
+      prompts,
+    },
+  };
+};
