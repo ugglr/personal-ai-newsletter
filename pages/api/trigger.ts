@@ -1,3 +1,4 @@
+// trigger.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import { ReminderDto } from "./reminders";
 import { PromptDto } from "./prompts";
@@ -33,67 +34,59 @@ type PostData = {
   success: boolean;
 };
 const handler = async (req: NextApiRequest, res: NextApiResponse<PostData>) => {
-  const { method, headers } = req;
+  const { query } = req;
 
-  if (headers.authorization !== process.env.NEXT_PUBLIC_API_KEY) {
-    res.status(401).json({ success: false });
+  if (query.apiKey !== process.env.NEXT_PUBLIC_API_KEY) {
+    res.status(404).end();
+    return;
   }
 
-  switch (method) {
-    case "POST":
-      try {
-        const reminders =
-          ((await loadData("reminders")) as ReminderDto[]) ?? [];
-        const prompts = ((await loadData("prompts")) as PromptDto[]) ?? [];
+  try {
+    const reminders = ((await loadData("reminders")) as ReminderDto[]) ?? [];
+    const prompts = ((await loadData("prompts")) as PromptDto[]) ?? [];
 
-        let reminderlistElements = "";
+    let reminderlistElements = "";
 
-        if (reminders.length > 0) {
-          reminders.forEach(({ reminder }: ReminderDto) => {
-            reminderlistElements += `<li>${reminder}</li>`;
-          });
-        }
+    if (reminders.length > 0) {
+      reminders.forEach(({ reminder }: ReminderDto) => {
+        reminderlistElements += `<li>${reminder}</li>`;
+      });
+    }
 
-        const htmlReminders = `<ul>${reminderlistElements}</ul>`;
+    const htmlReminders = `<ul>${reminderlistElements}</ul>`;
 
-        let chatGptResponseListElements = "";
+    let chatGptResponseListElements = "";
 
-        if (prompts.length > 0) {
-          for (const { prompt } of prompts) {
-            const chatResponse = await openai.createChatCompletion({
-              model: "gpt-3.5-turbo",
-              messages: [
-                {
-                  role: "user",
-                  content: prompt,
-                },
-              ],
-            });
-
-            const chatGptResponse =
-              chatResponse.data.choices[0].message?.content;
-
-            if (chatGptResponse) {
-              chatGptResponseListElements += `<li>${chatGptResponse}</li>`;
-            }
-          }
-        }
-
-        const htmlPrompts = `<ul>${chatGptResponseListElements}</ul>`;
-
-        await sendEmail("carl.igelstrom@gmail.com", {
-          htmlReminders,
-          htmlPrompts,
+    if (prompts.length > 0) {
+      for (const { prompt } of prompts) {
+        const chatResponse = await openai.createChatCompletion({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
         });
 
-        res.status(201).json({ success: true });
-      } catch (error) {
-        res.status(400).json({ success: false });
+        const chatGptResponse = chatResponse.data.choices[0].message?.content;
+
+        if (chatGptResponse) {
+          chatGptResponseListElements += `<li>${chatGptResponse}</li>`;
+        }
       }
-      break;
-    default:
-      res.status(400).json({ success: false });
-      break;
+    }
+
+    const htmlPrompts = `<ul>${chatGptResponseListElements}</ul>`;
+
+    await sendEmail("carl.igelstrom@gmail.com", {
+      htmlReminders,
+      htmlPrompts,
+    });
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false });
   }
 };
 
