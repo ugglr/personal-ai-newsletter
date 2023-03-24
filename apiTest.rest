@@ -37,7 +37,7 @@ content-type: application/json
 DELETE http://localhost:3000/api/reminders HTTP/1.1
 
 {
-    "id": "641b12c4bfa62a489665d52f"
+    "id": "641c50348c4fe760a8af4905"
 }
 
 ### TRIGGER
